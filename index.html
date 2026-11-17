@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Quiz System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .quiz-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 12px; margin-bottom: 20px; }
+    .timer { font-size: 1.1rem; font-weight: bold; color: #e74c3c; }
+    .question { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; color: #2c3e50; }
+    .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .option-btn { border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: left; background: #fff; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+    .option-btn:hover { background: #edf2f7; border-color: #cbd5e0; }
+    .option-btn.selected { background: #ebf8ff; border-color: #3182ce; color: #2b6cb0; font-weight: 600; }
+    .controls { display: flex; justify-content: space-between; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; background: #3182ce; color: white; transition: 0.2s; }
+    .btn:hover { background: #2b6cb0; }
+    .btn:disabled { background: #cbd5e0; cursor: not-allowed; }
+    .results { text-align: center; }
+    .results h2 { color: #2d3748; margin-bottom: 10px; }
+    .score { font-size: 2.5rem; font-weight: bold; color: #3182ce; margin: 15px 0; }
+  </style>
+</head>
+<body>
+
+<div class="quiz-card" id="quizApp">
+  <div class="header">
+    <span id="progress">Question 1/5</span>
+    <span class="timer" id="timer">Time: 60s</span>
+  </div>
+  
+  <div id="quizContent">
+    <div class="question" id="questionText">Loading...</div>
+    <div class="options" id="optionsContainer"></div>
+    <div class="controls">
+      <button class="btn" id="prevBtn" onclick="navigate(-1)">Previous</button>
+      <button class="btn" id="nextBtn" onclick="navigate(1)">Next</button>
+    </div>
+  </div>
+
+  <div id="resultsContent" class="results" style="display: none;">
+    <h2>Quiz Complete!</h2>
+    <div class="score" id="scoreText">0%</div>
+    <p id="summaryText"></p>
+    <br>
+    <button class="btn" onclick="restartQuiz()">Try Again</button>
+  </div>
+</div>
+
+<script>
+const quizData = [
+  { q: "What is the primary function of HTML?", opts: ["Styling web pages", "Structuring web content", "Database management", "Server side logic"], ans: 1 },
+  { q: "Which language runs in a browser?", opts: ["Java", "C#", "Python", "JavaScript"], ans: 3 },
+  { q: "What does CSS stand for?", opts: ["Cascading Style Sheets", "Creative Style System", "Computer Style Syntax", "Colorful Style Sheets"], ans: 0 },
+  { q: "Which tag is used for the largest heading in HTML?", opts: ["<h6>", "<head>", "<h1>", "<heading>"], ans: 2 },
+  { q: "What keyword defines a constant variable in JavaScript?", opts: ["var", "let", "const", "static"], ans: 2 }
+];
+
+let cur = 0, score = 0, timerVal = 60, timerInterval, answers = Array(quizData.length).fill(null);
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerVal--;
+    document.getElementById('timer').innerText = `Time: ${timerVal}s`;
+    if (timerVal <= 0) { clearInterval(timerInterval); submitQuiz(); }
+  }, 1000);
+}
+
+function loadQuestion() {
+  const q = quizData[cur];
+  document.getElementById('progress').innerText = `Question ${cur + 1}/${quizData.length}`;
+  document.getElementById('questionText').innerText = q.q;
+  
+  const optsDiv = document.getElementById('optionsContainer');
+  optsDiv.innerHTML = '';
+  q.opts.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = `option-btn ${answers[cur] === idx ? 'selected' : ''}`;
+    btn.innerText = opt;
+    btn.onclick = () => selectOption(idx);
+    optsDiv.appendChild(btn);
+  });
+
+  document.getElementById('prevBtn').disabled = cur === 0;
+  document.getElementById('nextBtn').innerText = cur === quizData.length - 1 ? 'Submit' : 'Next';
+}
+
+function selectOption(idx) {
+  answers[cur] = idx;
+  loadQuestion();
+}
+
+function navigate(dir) {
+  if (dir === 1 && cur === quizData.length - 1) { submitQuiz(); return; }
+  cur += dir;
+  loadQuestion();
+}
+
+function submitQuiz() {
+  clearInterval(timerInterval);
+  let correct = 0;
+  answers.forEach((ans, idx) => { if (ans === quizData[idx].ans) correct++; });
+  
+  document.getElementById('quizContent').style.display = 'none';
+  document.getElementById('resultsContent').style.display = 'block';
+  document.getElementById('scoreText').innerText = `${Math.round((correct / quizData.length) * 100)}%`;
+  document.getElementById('summaryText').innerText = `You scored ${correct} out of ${quizData.length} correctly.`;
+}
+
+function restartQuiz() {
+  cur = 0; timerVal = 60; answers.fill(null);
+  document.getElementById('quizContent').style.display = 'block';
+  document.getElementById('resultsContent').style.display = 'none';
+  startTimer();
+  loadQuestion();
+}
+
+startTimer();
+loadQuestion();
+</script>
+</body>
+</html>
